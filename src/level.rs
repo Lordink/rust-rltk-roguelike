@@ -1,4 +1,5 @@
 use rltk::{to_cp437, Rltk, RGB};
+use rust_roguelike::PLAYER_START_POS;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
@@ -13,6 +14,10 @@ pub fn xy_idx(x: i32, y: i32) -> usize {
 pub fn new_level() -> Vec<TileType> {
     let mut level = vec![TileType::Floor; 80 * 50];
     let wall = TileType::Wall;
+    let player_idx = {
+        let (player_x, player_y) = PLAYER_START_POS;
+        xy_idx(player_x, player_y)
+    };
 
     // Boundary walls
     for x in 0..80 {
@@ -31,7 +36,7 @@ pub fn new_level() -> Vec<TileType> {
         let x = rng.roll_dice(1, 79);
         let y = rng.roll_dice(1, 49);
         let idx = xy_idx(x, y);
-        if idx != xy_idx(40, 25) {
+        if idx != player_idx {
             level[idx] = wall;
         }
     }

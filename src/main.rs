@@ -1,4 +1,5 @@
 use rltk::RGB;
+use rust_roguelike::PLAYER_START_POS;
 use specs::prelude::*;
 
 mod components;
@@ -33,7 +34,10 @@ fn main() -> rltk::BError {
     // Create entities, starting with player:
     gs.ecs
         .create_entity()
-        .with(Position { x: 40, y: 25 })
+        .with({
+            let (pl_x, pl_y) = PLAYER_START_POS;
+            Position { x: pl_x, y: pl_y }
+        })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
