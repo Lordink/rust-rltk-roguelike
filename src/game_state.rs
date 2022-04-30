@@ -5,6 +5,8 @@ use std::cmp::{max, min};
 use crate::components::PlayerChar;
 use crate::components::Position;
 use crate::components::Renderable;
+use crate::level::draw_level;
+use crate::level::TileType;
 use crate::systems::LeftMoverSystem;
 
 pub struct State {
@@ -17,6 +19,12 @@ impl GameState for State {
         self.run_systems();
 
         ctx.cls();
+
+        // Render map
+        let level = self.ecs.fetch::<Vec<TileType>>();
+        draw_level(&level, ctx);
+
+        // Render entities
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
 
