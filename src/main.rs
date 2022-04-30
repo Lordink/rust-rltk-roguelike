@@ -29,16 +29,14 @@ fn main() -> rltk::BError {
     }
 
     // Insert map:
-    let (rooms, lvl) = level::new_level_v2();
-    gs.ecs.insert(lvl);
+    let level = level::Level::new();
+    let (pl_x, pl_y) = level.rooms[0].get_center();
+    gs.ecs.insert(level);
 
     // Create entities, starting with player:
     gs.ecs
         .create_entity()
-        .with({
-            let (pl_x, pl_y) = rooms[0].get_center();
-            Position { x: pl_x, y: pl_y }
-        })
+        .with(Position { x: pl_x, y: pl_y })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),

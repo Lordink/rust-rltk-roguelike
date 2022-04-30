@@ -1,6 +1,5 @@
 use crate::util::rect::Rect;
 use rltk::{to_cp437, RandomNumberGenerator, Rltk, RGB};
-use rust_roguelike::PLAYER_START_POS;
 use std::cmp::{max, min};
 
 #[derive(PartialEq, Copy, Clone)]
@@ -9,134 +8,103 @@ pub enum TileType {
     Floor,
 }
 
-pub fn xy_idx(x: i32, y: i32) -> usize {
-    x as usize + (y as usize * 80)
+pub struct Level {
+    pub tiles: Vec<TileType>,
+    pub rooms: Vec<Rect>,
+    pub width: i32,
+    pub height: i32,
 }
-
-/// Makes a map with solid boundaries and 400 randomly placed walls. No guarantees that it won't
-/// look awful.
-pub fn new_level_v1() -> Vec<TileType> {
-    let mut level = vec![TileType::Floor; 80 * 50];
-    let wall = TileType::Wall;
-    let player_idx = {
-        let (player_x, player_y) = PLAYER_START_POS;
-        xy_idx(player_x, player_y)
-    };
-
-    // Boundary walls
-    for x in 0..80 {
-        level[xy_idx(x, 0)] = wall;
-        level[xy_idx(x, 49)] = wall;
+impl Level {
+    pub fn xy_idx(&self, x: i32, y: i32) -> usize {
+        x as usize + (y as usize * self.width as usize)
     }
-    for y in 0..50 {
-        level[xy_idx(0, y)] = wall;
-        level[xy_idx(79, y)] = wall;
-    }
-
-    // Random bunch of walls:
-    let mut rng = rltk::RandomNumberGenerator::new();
-
-    for _ in 0..400 {
-        let x = rng.roll_dice(1, 79);
-        let y = rng.roll_dice(1, 49);
-        let idx = xy_idx(x, y);
-        if idx != player_idx {
-            level[idx] = wall;
+    fn apply_room(&mut self, room: &Rect) {
+        for y in room.y1 + 1..=room.y2 {
+            for x in room.x1 + 1..=room.x2 {
+                let tile_idx = self.xy_idx(x, y);
+                // Just a small self-testing piece of code
+                assert!(tile_idx < self.tiles.len());
+                self.tiles[tile_idx] = TileType::Floor;
+            }
         }
     }
 
-    level
-}
-
-/// Rooms and corridors
-pub fn new_level_v2() -> (Vec<Rect>, Vec<TileType>) {
-    let mut level = vec![TileType::Wall; 80 * 50];
-
-    let mut rooms: Vec<Rect> = Vec::new();
-    const NUM_MAX_ROOMS: u8 = 30;
-    const MIN_ROOM_SIZE: u8 = 6;
-    const MAX_ROOM_SIZE: u8 = 10;
-
-    let mut rng = RandomNumberGenerator::new();
-
-    for _ in 0..NUM_MAX_ROOMS {
-        let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
-        let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
-        let x = rng.roll_dice(1, 80 - w - 1) - 1;
-        let y = rng.roll_dice(1, 50 - h - 1) - 1;
-        let new_room = Rect::new(x, y, w, h);
-
-        let no_intersections = rooms
-            .iter()
-            .find(|&room| new_room.intersects(room))
-            .is_none();
-
-        // TODO later: we could sometimes allow intersections
-        // to create more interesting rooms.
-        if !no_intersections {
-            continue;
+    fn apply_horiz_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
+        for x in min(x1, x2)..=max(x1, x2) {
+            let idx = self.xy_idx(x, y);
+            if idx > 0 && idx < 80 * 50 {
+                self.tiles[idx as usize] = TileType::Floor;
+            }
         }
-
-        apply_room_to_level(&new_room, &mut level);
-
-        // Corridorize
-        if !rooms.is_empty() {
-            add_corridors(&new_room, &rooms, &mut rng, &mut level);
-        }
-
-        rooms.push(new_room);
     }
 
-    (rooms, level)
+    fn apply_vert_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
+        for y in min(y1, y2)..=max(y1, y2) {
+            let idx = self.xy_idx(x, y);
+            if idx > 0 && idx < 80 * 50 {
+                self.tiles[idx as usize] = TileType::Floor;
+            }
+        }
+    }
+    pub fn new() -> Self {
+        let mut level = Level {
+            tiles: vec![TileType::Wall; 80 * 50],
+            rooms: Vec::new(),
+            width: 80,
+            height: 50,
+        };
+        const NUM_MAX_ROOMS: u8 = 30;
+        const MIN_ROOM_SIZE: u8 = 6;
+        const MAX_ROOM_SIZE: u8 = 10;
+
+        let mut rng = RandomNumberGenerator::new();
+
+        for _ in 0..NUM_MAX_ROOMS {
+            let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
+            let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
+            let x = rng.roll_dice(1, 80 - w - 1) - 1;
+            let y = rng.roll_dice(1, 50 - h - 1) - 1;
+            let new_room = Rect::new(x, y, w, h);
+
+            let no_intersections = level
+                .rooms
+                .iter()
+                .find(|&room| new_room.intersects(room))
+                .is_none();
+
+            // TODO later: we could sometimes allow intersections
+            // to create more interesting rooms.
+            if !no_intersections {
+                continue;
+            }
+
+            level.apply_room(&new_room);
+
+            // Corridorize
+            if !level.rooms.is_empty() {
+                add_corridors(&new_room, &mut rng, &mut level);
+            }
+
+            level.rooms.push(new_room);
+        }
+
+        level
+    }
 }
 
-fn add_corridors(
-    new_room: &Rect,
-    rooms: &[Rect],
-    rng: &mut RandomNumberGenerator,
-    level: &mut [TileType],
-) {
+fn add_corridors(new_room: &Rect, rng: &mut RandomNumberGenerator, level: &mut Level) {
     let (new_x, new_y) = new_room.get_center();
-    let (prev_x, prev_y) = rooms[rooms.len() - 1].get_center();
+    let (prev_x, prev_y) = level.rooms[level.rooms.len() - 1].get_center();
     if rng.range(0, 2) == 1 {
-        mk_horiz_tunnel(level, prev_x, new_x, prev_y);
-        mk_vert_tunnel(level, prev_y, new_y, new_x);
+        level.apply_horiz_tunnel(prev_x, new_x, prev_y);
+        level.apply_vert_tunnel(prev_y, new_y, new_x);
     } else {
-        mk_vert_tunnel(level, prev_y, new_y, prev_x);
-        mk_horiz_tunnel(level, prev_x, new_x, new_y);
+        level.apply_vert_tunnel(prev_y, new_y, prev_x);
+        level.apply_horiz_tunnel(prev_x, new_x, new_y);
     }
 }
 
-fn apply_room_to_level(room: &Rect, level: &mut [TileType]) {
-    for y in room.y1 + 1..=room.y2 {
-        for x in room.x1 + 1..=room.x2 {
-            let tile_idx = xy_idx(x, y);
-            // Just a small self-testing piece of code
-            assert!(tile_idx < level.len());
-            level[tile_idx] = TileType::Floor;
-        }
-    }
-}
-
-fn mk_horiz_tunnel(level: &mut [TileType], x1: i32, x2: i32, y: i32) {
-    for x in min(x1, x2)..=max(x1, x2) {
-        let idx = xy_idx(x, y);
-        if idx > 0 && idx < 80 * 50 {
-            level[idx as usize] = TileType::Floor;
-        }
-    }
-}
-
-fn mk_vert_tunnel(level: &mut [TileType], y1: i32, y2: i32, x: i32) {
-    for y in min(y1, y2)..=max(y1, y2) {
-        let idx = xy_idx(x, y);
-        if idx > 0 && idx < 80 * 50 {
-            level[idx as usize] = TileType::Floor;
-        }
-    }
-}
-
-pub fn draw_level(level: &[TileType], ctx: &mut Rltk) {
+pub fn draw_tiles(level: &[TileType], ctx: &mut Rltk) {
     let (mut x, mut y) = (0, 0);
 
     for tile in level.iter() {

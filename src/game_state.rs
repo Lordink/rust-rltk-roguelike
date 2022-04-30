@@ -5,8 +5,8 @@ use std::cmp::{max, min};
 use crate::components::PlayerChar;
 use crate::components::Position;
 use crate::components::Renderable;
-use crate::level::draw_level;
-use crate::level::xy_idx;
+use crate::level::draw_tiles;
+use crate::level::Level;
 use crate::level::TileType;
 use crate::systems::LeftMoverSystem;
 
@@ -22,8 +22,8 @@ impl GameState for State {
         ctx.cls();
 
         // Render map
-        let level = self.ecs.fetch::<Vec<TileType>>();
-        draw_level(&level, ctx);
+        let level = self.ecs.fetch::<Level>();
+        draw_tiles(&level.tiles, ctx);
 
         // Render entities
         let positions = self.ecs.read_storage::<Position>();
@@ -46,10 +46,10 @@ fn process_input(gs: &mut State, ctx: &mut Rltk) {
     match ctx.key {
         None => {}
         Some(key) => match key {
-            VirtualKeyCode::Left => move_player(-1, 0, &mut gs.ecs),
-            VirtualKeyCode::Right => move_player(1, 0, &mut gs.ecs),
-            VirtualKeyCode::Up => move_player(0, -1, &mut gs.ecs),
-            VirtualKeyCode::Down => move_player(0, 1, &mut gs.ecs),
+            VirtualKeyCode::Left | VirtualKeyCode::A => move_player(-1, 0, &mut gs.ecs),
+            VirtualKeyCode::Right | VirtualKeyCode::D => move_player(1, 0, &mut gs.ecs),
+            VirtualKeyCode::Up | VirtualKeyCode::W => move_player(0, -1, &mut gs.ecs),
+            VirtualKeyCode::Down | VirtualKeyCode::S => move_player(0, 1, &mut gs.ecs),
             _ => {}
         },
     }
@@ -58,11 +58,11 @@ fn process_input(gs: &mut State, ctx: &mut Rltk) {
 fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<PlayerChar>();
-    let level = ecs.fetch::<Vec<TileType>>();
+    let level = ecs.fetch::<Level>();
 
     for (_, pos) in (&mut players, &mut positions).join() {
-        let target_idx = xy_idx(pos.x + delta_x, pos.y + delta_y);
-        if level[target_idx] != TileType::Wall {
+        let target_idx = level.xy_idx(pos.x + delta_x, pos.y + delta_y);
+        if level.tiles[target_idx] != TileType::Wall {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
         }
