@@ -49,7 +49,7 @@ pub fn new_level_v1() -> Vec<TileType> {
 }
 
 /// Rooms and corridors
-pub fn new_level_v2() -> Vec<TileType> {
+pub fn new_level_v2() -> (Vec<Rect>, Vec<TileType>) {
     let mut level = vec![TileType::Wall; 80 * 50];
 
     let mut rooms: Vec<Rect> = Vec::new();
@@ -73,27 +73,38 @@ pub fn new_level_v2() -> Vec<TileType> {
 
         // TODO later: we could sometimes allow intersections
         // to create more interesting rooms.
-        if no_intersections {
-            apply_room_to_level(&new_room, &mut level);
-
-            // Corridorize
-            if !rooms.is_empty() {
-                let (new_x, new_y) = new_room.get_center();
-                let (prev_x, prev_y) = rooms[rooms.len() - 1].get_center();
-                if rng.range(0, 2) == 1 {
-                    mk_horiz_tunnel(&mut level, prev_x, new_x, prev_y);
-                    mk_vert_tunnel(&mut level, prev_y, new_y, new_x);
-                } else {
-                    mk_vert_tunnel(&mut level, prev_y, new_y, prev_x);
-                    mk_horiz_tunnel(&mut level, prev_x, new_x, new_y);
-                }
-            }
-
-            rooms.push(new_room);
+        if !no_intersections {
+            continue;
         }
+
+        apply_room_to_level(&new_room, &mut level);
+
+        // Corridorize
+        if !rooms.is_empty() {
+            add_corridors(&new_room, &rooms, &mut rng, &mut level);
+        }
+
+        rooms.push(new_room);
     }
 
-    level
+    (rooms, level)
+}
+
+fn add_corridors(
+    new_room: &Rect,
+    rooms: &[Rect],
+    rng: &mut RandomNumberGenerator,
+    level: &mut [TileType],
+) {
+    let (new_x, new_y) = new_room.get_center();
+    let (prev_x, prev_y) = rooms[rooms.len() - 1].get_center();
+    if rng.range(0, 2) == 1 {
+        mk_horiz_tunnel(level, prev_x, new_x, prev_y);
+        mk_vert_tunnel(level, prev_y, new_y, new_x);
+    } else {
+        mk_vert_tunnel(level, prev_y, new_y, prev_x);
+        mk_horiz_tunnel(level, prev_x, new_x, new_y);
+    }
 }
 
 fn apply_room_to_level(room: &Rect, level: &mut [TileType]) {

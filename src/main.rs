@@ -1,5 +1,4 @@
 use rltk::RGB;
-use rust_roguelike::PLAYER_START_POS;
 use specs::prelude::*;
 
 mod components;
@@ -30,13 +29,14 @@ fn main() -> rltk::BError {
     }
 
     // Insert map:
-    gs.ecs.insert(level::new_level_v2());
+    let (rooms, lvl) = level::new_level_v2();
+    gs.ecs.insert(lvl);
 
     // Create entities, starting with player:
     gs.ecs
         .create_entity()
         .with({
-            let (pl_x, pl_y) = PLAYER_START_POS;
+            let (pl_x, pl_y) = rooms[0].get_center();
             Position { x: pl_x, y: pl_y }
         })
         .with(Renderable {
