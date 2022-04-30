@@ -1,10 +1,13 @@
 use specs::prelude::*;
 
-use crate::components::LeftMover;
-use crate::components::Position;
+pub mod visibility_system;
+pub use visibility_system::*;
 
-pub struct LeftMoverSystem {}
-impl<'a> System<'a> for LeftMoverSystem {
+use crate::components::{LeftMover, Position};
+
+// Quick example of a (useless) system that moves LeftMovers to the left
+pub struct _LeftMoverSystem {}
+impl<'a> System<'a> for _LeftMoverSystem {
     type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
 
     fn run(&mut self, (lefty, mut pos): Self::SystemData) {

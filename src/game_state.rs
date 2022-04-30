@@ -5,10 +5,8 @@ use std::cmp::{max, min};
 use crate::components::PlayerChar;
 use crate::components::Position;
 use crate::components::Renderable;
-use crate::level::draw_tiles;
-use crate::level::Level;
-use crate::level::TileType;
-use crate::systems::LeftMoverSystem;
+use crate::level::{draw_tiles, Level, TileType};
+use crate::systems::VisibilitySystem;
 
 pub struct State {
     pub ecs: World,
@@ -22,8 +20,7 @@ impl GameState for State {
         ctx.cls();
 
         // Render map
-        let level = self.ecs.fetch::<Level>();
-        draw_tiles(&level.tiles, ctx);
+        draw_tiles(&mut self.ecs, ctx);
 
         // Render entities
         let positions = self.ecs.read_storage::<Position>();
@@ -36,8 +33,8 @@ impl GameState for State {
 }
 impl State {
     fn run_systems(&mut self) {
-        let mut lw = LeftMoverSystem {};
-        lw.run_now(&self.ecs);
+        let mut vis = VisibilitySystem {};
+        vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }

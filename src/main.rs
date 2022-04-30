@@ -7,10 +7,7 @@ mod level;
 mod systems;
 mod util;
 
-use components::LeftMover;
-use components::PlayerChar;
-use components::Position;
-use components::Renderable;
+use components::{LeftMover, PlayerChar, Position, Renderable, Viewshed};
 use game_state::State;
 
 fn main() -> rltk::BError {
@@ -26,6 +23,7 @@ fn main() -> rltk::BError {
         gs.ecs.register::<Renderable>();
         gs.ecs.register::<LeftMover>();
         gs.ecs.register::<PlayerChar>();
+        gs.ecs.register::<Viewshed>();
     }
 
     // Insert map:
@@ -43,6 +41,7 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(PlayerChar {})
+        .with(Viewshed::new())
         .build();
 
     for i in 0..10 {
