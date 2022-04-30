@@ -6,6 +6,7 @@ mod components;
 mod game_state;
 mod level;
 mod systems;
+mod util;
 
 use components::LeftMover;
 use components::PlayerChar;
@@ -29,7 +30,7 @@ fn main() -> rltk::BError {
     }
 
     // Insert map:
-    gs.ecs.insert(level::new_level());
+    gs.ecs.insert(level::new_level_v2());
 
     // Create entities, starting with player:
     gs.ecs
