@@ -1,5 +1,5 @@
 use crate::util::rect::Rect;
-use rltk::{to_cp437, Rltk, RGB};
+use rltk::{to_cp437, RandomNumberGenerator, Rltk, RGB};
 use rust_roguelike::PLAYER_START_POS;
 use std::cmp::{max, min};
 
@@ -52,17 +52,46 @@ pub fn new_level_v1() -> Vec<TileType> {
 pub fn new_level_v2() -> Vec<TileType> {
     let mut level = vec![TileType::Wall; 80 * 50];
 
-    // Make rooms...
-    {
-        let room1 = Rect::new(20, 15, 10, 15);
-        let room2 = Rect::new(35, 15, 10, 15);
+    let mut rooms: Vec<Rect> = Vec::new();
+    const NUM_MAX_ROOMS: u8 = 30;
+    const MIN_ROOM_SIZE: u8 = 6;
+    const MAX_ROOM_SIZE: u8 = 10;
 
-        apply_room_to_level(&room1, &mut level);
-        apply_room_to_level(&room2, &mut level);
+    let mut rng = RandomNumberGenerator::new();
+
+    for _ in 0..NUM_MAX_ROOMS {
+        let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
+        let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
+        let x = rng.roll_dice(1, 80 - w - 1) - 1;
+        let y = rng.roll_dice(1, 50 - h - 1) - 1;
+        let new_room = Rect::new(x, y, w, h);
+
+        let no_intersections = rooms
+            .iter()
+            .find(|&room| new_room.intersects(room))
+            .is_none();
+
+        // TODO later: we could sometimes allow intersections
+        // to create more interesting rooms.
+        if no_intersections {
+            apply_room_to_level(&new_room, &mut level);
+
+            // Corridorize
+            if !rooms.is_empty() {
+                let (new_x, new_y) = new_room.get_center();
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].get_center();
+                if rng.range(0, 2) == 1 {
+                    mk_horiz_tunnel(&mut level, prev_x, new_x, prev_y);
+                    mk_vert_tunnel(&mut level, prev_y, new_y, new_x);
+                } else {
+                    mk_vert_tunnel(&mut level, prev_y, new_y, prev_x);
+                    mk_horiz_tunnel(&mut level, prev_x, new_x, new_y);
+                }
+            }
+
+            rooms.push(new_room);
+        }
     }
-
-    // Make tunnel between rooms
-    mk_horiz_tunnel(&mut level, 25, 40, 23);
 
     level
 }
