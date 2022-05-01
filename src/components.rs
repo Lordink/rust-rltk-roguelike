@@ -17,3 +17,9 @@ pub struct PlayerChar {}
 
 #[derive(Component, Debug)]
 pub struct MonsterChar {}
+
+/// Anyone with this comp has a name we can show to the player
+#[derive(Component, Debug)]
+pub struct GameplayName {
+    pub name: String,
+}

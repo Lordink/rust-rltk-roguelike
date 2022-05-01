@@ -1,3 +1,4 @@
+use rltk::Point;
 use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
@@ -89,6 +90,10 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
             // Notify the viewshed that it's dirty
             vs.is_dirty = true;
+            // Update the globally available player loc storage
+            let mut player_pos_storage = ecs.write_resource::<Point>();
+            player_pos_storage.x = pos.x;
+            player_pos_storage.y = pos.y;
         }
     }
 }
