@@ -32,7 +32,7 @@ impl<'a> System<'a> for VisibilitySystem {
             if is_player {
                 for &Point { x, y } in viewshed.visible_tiles.iter() {
                     let idx = level.xy_idx(x, y);
-                    level.are_tiles_revealed[idx] = true;
+                    level.reveal_tile(idx);
                 }
             }
         }

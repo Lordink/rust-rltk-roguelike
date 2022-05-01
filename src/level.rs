@@ -5,6 +5,7 @@ use crate::{
 use rltk::{to_cp437, Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
 use specs::{Join, World, WorldExt};
 use std::cmp::{max, min};
+use std::collections::HashSet;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
@@ -20,7 +21,7 @@ pub struct Level {
     /// Has the same len as the total level indices
     /// Each tile is either false (not revealed) or true
     /// TODO try replacing with a set
-    pub are_tiles_revealed: Vec<bool>,
+    revealed_tile_indices: HashSet<usize>,
 }
 
 //--------------START RLTK Trait implementations
@@ -39,6 +40,12 @@ impl BaseMap for Level {
 //--------------END RLTK Trait implementations
 
 impl Level {
+    pub fn is_tile_revealed(&self, idx: usize) -> bool {
+        self.revealed_tile_indices.contains(&idx)
+    }
+    pub fn reveal_tile(&mut self, idx: usize) {
+        self.revealed_tile_indices.insert(idx);
+    }
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         x as usize + (y as usize * self.width as usize)
     }
@@ -76,7 +83,7 @@ impl Level {
             rooms: Vec::new(),
             width: 80,
             height: 50,
-            are_tiles_revealed: vec![false; 80 * 50],
+            revealed_tile_indices: HashSet::new(),
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;
@@ -135,7 +142,7 @@ pub fn draw_tiles(ecs: &World, ctx: &mut Rltk) {
     let (mut x, mut y) = (0, 0);
     for (idx, tile) in level.tiles.iter().enumerate() {
         // Render a type depending on its type
-        if level.are_tiles_revealed[idx] {
+        if level.is_tile_revealed(idx) {
             draw_tile(tile, ctx, x, y);
         }
 
