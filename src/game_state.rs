@@ -5,6 +5,7 @@ use std::cmp::{max, min};
 use crate::components::PlayerChar;
 use crate::components::Position;
 use crate::components::Renderable;
+use crate::components::Viewshed;
 use crate::level::{draw_tiles, Level, TileType};
 use crate::systems::VisibilitySystem;
 
@@ -55,13 +56,17 @@ fn process_input(gs: &mut State, ctx: &mut Rltk) {
 fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<PlayerChar>();
+    let mut viewsheds = ecs.write_storage::<Viewshed>();
     let level = ecs.fetch::<Level>();
 
-    for (_, pos) in (&mut players, &mut positions).join() {
+    for (_, pos, vs) in (&mut players, &mut positions, &mut viewsheds).join() {
         let target_idx = level.xy_idx(pos.x + delta_x, pos.y + delta_y);
         if level.tiles[target_idx] != TileType::Wall {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
+
+            // Notify the viewshed that it's dirty
+            vs.is_dirty = true;
         }
     }
 }

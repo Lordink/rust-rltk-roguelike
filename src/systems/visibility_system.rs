@@ -15,9 +15,17 @@ impl<'a> System<'a> for VisibilitySystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut level, entities, mut viewshed, pos, player_chars) = data;
+        let (mut level, entities, mut viewsheds, positions, player_chars) = data;
 
-        for (ent, viewshed, pos) in (&entities, &mut viewshed, &pos).join() {
+        for (ent, viewshed, pos) in (&entities, &mut viewsheds, &positions).join() {
+            // Do nothing if this entity doesn't seem to require visibility recalc
+            if !viewshed.is_dirty {
+                continue;
+            } else {
+                // Clear the visibility recalc flag
+                viewshed.is_dirty = false;
+            }
+            dbg!("Recalculating vis...");
             // Fill viewshed of this entity with the tiles it can see
             viewshed.visible_tiles.clear();
             viewshed.visible_tiles =
