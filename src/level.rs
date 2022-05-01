@@ -20,8 +20,10 @@ pub struct Level {
     pub height: i32,
     /// Has the same len as the total level indices
     /// Each tile is either false (not revealed) or true
-    /// TODO try replacing with a set
+    /// These tiles were seen by player at some point
     revealed_tile_indices: HashSet<usize>,
+    /// These tile indices are CURRENTLY VISIBLE by the player
+    fov_tile_indices: HashSet<usize>,
 }
 
 //--------------START RLTK Trait implementations
@@ -40,11 +42,19 @@ impl BaseMap for Level {
 //--------------END RLTK Trait implementations
 
 impl Level {
+    pub fn clear_fov_tiles(&mut self) {
+        self.fov_tile_indices.clear();
+    }
     pub fn is_tile_revealed(&self, idx: usize) -> bool {
         self.revealed_tile_indices.contains(&idx)
     }
+    pub fn is_tile_visible(&self, idx: usize) -> bool {
+        self.fov_tile_indices.contains(&idx)
+    }
     pub fn reveal_tile(&mut self, idx: usize) {
         self.revealed_tile_indices.insert(idx);
+        // Also add to fov (visible) tiles when we reveal them
+        self.fov_tile_indices.insert(idx);
     }
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         x as usize + (y as usize * self.width as usize)
@@ -84,6 +94,7 @@ impl Level {
             width: 80,
             height: 50,
             revealed_tile_indices: HashSet::new(),
+            fov_tile_indices: HashSet::new(),
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;
@@ -143,7 +154,7 @@ pub fn draw_tiles(ecs: &World, ctx: &mut Rltk) {
     for (idx, tile) in level.tiles.iter().enumerate() {
         // Render a type depending on its type
         if level.is_tile_revealed(idx) {
-            draw_tile(tile, ctx, x, y);
+            draw_tile(level.is_tile_visible(idx), tile, ctx, x, y);
         }
 
         x += 1;
@@ -154,25 +165,24 @@ pub fn draw_tiles(ecs: &World, ctx: &mut Rltk) {
     }
 }
 
-fn draw_tile(tile: &TileType, ctx: &mut Rltk, x: i32, y: i32) {
+fn draw_tile(is_visible: bool, tile: &TileType, ctx: &mut Rltk, x: i32, y: i32) {
+    let glyph;
+    let mut fg;
     match tile {
         TileType::Floor => {
-            ctx.set(
-                x,
-                y,
-                RGB::from_f32(0.5, 0.5, 0.5),
-                RGB::from_f32(0., 0., 0.),
-                to_cp437('.'),
-            );
+            glyph = to_cp437('.');
+            fg = RGB::from_f32(0.5, 0.5, 0.5);
         }
         TileType::Wall => {
-            ctx.set(
-                x,
-                y,
-                RGB::from_f32(0.5, 0.5, 0.5),
-                RGB::from_f32(0.0, 0.0, 0.0),
-                to_cp437('#'),
-            );
+            glyph = to_cp437('#');
+            fg = RGB::from_f32(0.4, 0.4, 0.4);
         }
     }
+    if !is_visible {
+        const VIS_DARKEN: f32 = 0.3;
+        fg.r -= VIS_DARKEN;
+        fg.g -= VIS_DARKEN;
+        fg.b -= VIS_DARKEN;
+    }
+    ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
 }

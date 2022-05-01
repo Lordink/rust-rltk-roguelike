@@ -38,6 +38,7 @@ impl<'a> System<'a> for VisibilitySystem {
             let is_player = player_chars.get(ent).is_some();
 
             if is_player {
+                level.clear_fov_tiles();
                 for &Point { x, y } in viewshed.visible_tiles.iter() {
                     let idx = level.xy_idx(x, y);
                     level.reveal_tile(idx);
