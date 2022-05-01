@@ -23,3 +23,6 @@ pub struct MonsterChar {}
 pub struct GameplayName {
     pub name: String,
 }
+
+#[derive(Component, Debug)]
+pub struct TileBlocker {}

@@ -21,6 +21,8 @@ pub struct Level {
     revealed_tile_indices: HashSet<usize>,
     /// These tile indices are CURRENTLY VISIBLE by the player
     fov_tile_indices: HashSet<usize>,
+    /// Keeping track of tiles blocked by some entity (preventing movement)
+    blocked_tile_indices: HashSet<usize>,
 }
 
 //--------------START RLTK Trait implementations
@@ -68,12 +70,26 @@ impl BaseMap for Level {
 //--------------END RLTK Trait implementations
 
 impl Level {
+    pub fn block_walls_only(&mut self) {
+        self.blocked_tile_indices.clear();
+        for (i, tile) in self.tiles.iter().enumerate() {
+            if *tile == TileType::Wall {
+                self.blocked_tile_indices.insert(i);
+            }
+        }
+    }
+    pub fn block_tile(&mut self, idx: usize) {
+        self.blocked_tile_indices.insert(idx);
+    }
+    pub fn is_tile_blocked(&self, idx: usize) -> bool {
+        self.blocked_tile_indices.contains(&idx)
+    }
     pub fn is_valid_exit(&self, x: i32, y: i32) -> bool {
         if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
             false
         } else {
             let idx = self.xy_idx(x, y);
-            self.tiles[idx as usize] != TileType::Wall
+            !self.is_tile_blocked(idx as usize)
         }
     }
     pub fn clear_fov_tiles(&mut self) {
@@ -129,6 +145,7 @@ impl Level {
             height: 50,
             revealed_tile_indices: HashSet::new(),
             fov_tile_indices: HashSet::new(),
+            blocked_tile_indices: HashSet::new(),
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;

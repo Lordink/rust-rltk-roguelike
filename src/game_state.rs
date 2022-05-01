@@ -8,8 +8,8 @@ use crate::components::Position;
 use crate::components::Renderable;
 use crate::components::Viewshed;
 use crate::level::{draw_tiles, Level, TileType};
-use crate::systems::MonsterAISystem;
 use crate::systems::VisibilitySystem;
+use crate::systems::{MapIndexingSystem, MonsterAISystem};
 
 /// Current status of the game, used in tick to accomodate the turn-based nature of the gameplay
 #[derive(PartialEq, Copy, Clone)]
@@ -58,6 +58,9 @@ impl State {
         let mut monster_ai = MonsterAISystem {};
         monster_ai.run_now(&self.ecs);
 
+        let mut map_indexer = MapIndexingSystem {};
+        map_indexer.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -84,7 +87,7 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
     for (_, pos, vs) in (&mut players, &mut positions, &mut viewsheds).join() {
         let target_idx = level.xy_idx(pos.x + delta_x, pos.y + delta_y);
-        if level.tiles[target_idx] != TileType::Wall {
+        if !level.is_tile_blocked(target_idx) {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
 

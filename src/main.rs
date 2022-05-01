@@ -8,7 +8,7 @@ mod systems;
 mod util;
 
 use components::{
-    GameplayName, LeftMover, MonsterChar, PlayerChar, Position, Renderable, Viewshed,
+    GameplayName, LeftMover, MonsterChar, PlayerChar, Position, Renderable, TileBlocker, Viewshed,
 };
 use game_state::{GameStatus, State};
 
@@ -63,6 +63,7 @@ fn main() -> rltk::BError {
                 .with(GameplayName {
                     name: format!("{} #{}", &name, i + 1),
                 })
+                .with(TileBlocker {})
                 .build();
         }
     }
@@ -99,4 +100,5 @@ fn register_components(gs: &mut State) {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<MonsterChar>();
     gs.ecs.register::<GameplayName>();
+    gs.ecs.register::<TileBlocker>();
 }
