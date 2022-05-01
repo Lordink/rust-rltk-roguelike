@@ -25,7 +25,7 @@ impl<'a> System<'a> for VisibilitySystem {
                 // Clear the visibility recalc flag
                 viewshed.is_dirty = false;
             }
-            dbg!("Recalculating vis...");
+            // dbg!("Recalculating vis...");
             // Fill viewshed of this entity with the tiles it can see
             viewshed.visible_tiles.clear();
             viewshed.visible_tiles =

@@ -26,9 +26,12 @@ impl GameState for State {
         // Render entities
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let level = self.ecs.fetch::<Level>();
 
         for (pos, ren) in (&positions, &renderables).join() {
-            ctx.set(pos.x, pos.y, ren.fg, ren.bg, ren.glyph);
+            if level.is_tile_visible(level.xy_idx(pos.x, pos.y)) {
+                ctx.set(pos.x, pos.y, ren.fg, ren.bg, ren.glyph);
+            }
         }
     }
 }

@@ -26,12 +26,32 @@ fn main() -> rltk::BError {
         gs.ecs.register::<Viewshed>();
     }
 
-    // Insert map:
+    // Create map:
     let level = level::Level::new();
     let (pl_x, pl_y) = level.rooms[0].get_center();
-    gs.ecs.insert(level);
 
-    // Create entities, starting with player:
+    // Create monsters:
+    for room in level.rooms.iter().skip(1) {
+        let (x, y) = room.get_center();
+        gs.ecs
+            .create_entity()
+            .with(Position { x, y })
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 8,
+                is_dirty: true,
+            })
+            .build();
+    }
+
+    // Insert map after creating monsters (to satisfy borrow checker)
+    gs.ecs.insert(level);
+    // Create player:
     gs.ecs
         .create_entity()
         .with(Position { x: pl_x, y: pl_y })
@@ -44,17 +64,5 @@ fn main() -> rltk::BError {
         .with(Viewshed::new())
         .build();
 
-    for i in 0..10 {
-        gs.ecs
-            .create_entity()
-            .with(Position { x: i * 7, y: 20 })
-            .with(Renderable {
-                glyph: rltk::to_cp437('*'),
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(LeftMover {})
-            .build();
-    }
     rltk::main_loop(ctx, gs)
 }
