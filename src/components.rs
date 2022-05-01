@@ -1,10 +1,12 @@
 use specs::prelude::*;
 use specs_derive::Component;
 
+pub mod combat_stats;
 pub mod position;
 pub mod renderable;
 pub mod viewshed;
 
+pub use combat_stats::*;
 pub use position::*;
 pub use renderable::*;
 pub use viewshed::*;

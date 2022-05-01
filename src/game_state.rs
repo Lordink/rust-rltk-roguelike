@@ -1,13 +1,13 @@
-use rltk::Point;
+use rltk::{console, Point};
 use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
 
-use crate::components::PlayerChar;
 use crate::components::Position;
 use crate::components::Renderable;
 use crate::components::Viewshed;
-use crate::level::{draw_tiles, Level, TileType};
+use crate::components::{CombatStats, PlayerChar};
+use crate::level::{draw_tiles, Level};
 use crate::systems::VisibilitySystem;
 use crate::systems::{MapIndexingSystem, MonsterAISystem};
 
@@ -88,10 +88,25 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<PlayerChar>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
+    let combat_stats = ecs.read_storage::<CombatStats>();
     let level = ecs.fetch::<Level>();
 
     for (_, pos, vs) in (&mut players, &mut positions, &mut viewsheds).join() {
         let target_idx = level.xy_idx(pos.x + delta_x, pos.y + delta_y);
+
+        // Before moving - let's see if we attack anything:
+        for target in level.tile_content[target_idx].iter() {
+            match combat_stats.get(*target) {
+                None => {}
+                Some(_target_combat_stats) => {
+                    // Attack the target
+                    console::log(&format!("YAAAAISSS! We attack!"));
+                    // Prevent from further movement
+                    return;
+                }
+            }
+        }
+
         if !level.is_tile_blocked(target_idx) {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));

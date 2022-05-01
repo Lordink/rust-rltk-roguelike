@@ -1,6 +1,6 @@
 use crate::util::rect::Rect;
 use rltk::{to_cp437, Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
-use specs::World;
+use specs::{Entity, World};
 use std::cmp::{max, min};
 use std::collections::HashSet;
 
@@ -23,6 +23,7 @@ pub struct Level {
     fov_tile_indices: HashSet<usize>,
     /// Keeping track of tiles blocked by some entity (preventing movement)
     blocked_tile_indices: HashSet<usize>,
+    pub tile_content: Vec<Vec<Entity>>,
 }
 
 //--------------START RLTK Trait implementations
@@ -85,6 +86,11 @@ impl BaseMap for Level {
 //--------------END RLTK Trait implementations
 
 impl Level {
+    pub fn clear_tiles_content(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
+    }
     pub fn block_walls_only(&mut self) {
         self.blocked_tile_indices.clear();
         for (i, tile) in self.tiles.iter().enumerate() {
@@ -161,6 +167,7 @@ impl Level {
             revealed_tile_indices: HashSet::new(),
             fov_tile_indices: HashSet::new(),
             blocked_tile_indices: HashSet::new(),
+            tile_content: vec![Vec::new(); 80 * 50],
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;

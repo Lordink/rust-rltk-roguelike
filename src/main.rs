@@ -8,7 +8,8 @@ mod systems;
 mod util;
 
 use components::{
-    GameplayName, LeftMover, MonsterChar, PlayerChar, Position, Renderable, TileBlocker, Viewshed,
+    CombatStats, GameplayName, LeftMover, MonsterChar, PlayerChar, Position, Renderable,
+    TileBlocker, Viewshed,
 };
 use game_state::{GameStatus, State};
 
@@ -64,6 +65,12 @@ fn main() -> rltk::BError {
                     name: format!("{} #{}", &name, i + 1),
                 })
                 .with(TileBlocker {})
+                .with(CombatStats {
+                    max_hp: 16,
+                    hp: 16,
+                    defense: 1,
+                    power: 4,
+                })
                 .build();
         }
     }
@@ -87,6 +94,12 @@ fn main() -> rltk::BError {
         .with(GameplayName {
             name: "Player".to_string(),
         })
+        .with(CombatStats {
+            max_hp: 30,
+            hp: 30,
+            defense: 2,
+            power: 5,
+        })
         .build();
 
     rltk::main_loop(ctx, gs)
@@ -101,4 +114,5 @@ fn register_components(gs: &mut State) {
     gs.ecs.register::<MonsterChar>();
     gs.ecs.register::<GameplayName>();
     gs.ecs.register::<TileBlocker>();
+    gs.ecs.register::<CombatStats>();
 }
