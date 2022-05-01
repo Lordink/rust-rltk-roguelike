@@ -3,12 +3,12 @@ use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
 
-use crate::components::Renderable;
 use crate::components::Viewshed;
 use crate::components::{CombatStats, PlayerChar};
+use crate::components::{GameplayName, Renderable};
 use crate::components::{MeleeAttackIntent, Position};
 use crate::level::{draw_tiles, Level};
-use crate::systems::{MapIndexingSystem, MonsterAISystem};
+use crate::systems::{DamageSystem, MapIndexingSystem, MonsterAISystem};
 use crate::systems::{MeleeCombatSystem, VisibilitySystem};
 
 /// Current status of the game, used in tick to accomodate the turn-based nature of the gameplay
@@ -28,6 +28,8 @@ impl GameState for State {
         if self.status == GameStatus::Running {
             // Run the systems a single time and then pause until the next input
             self.run_systems();
+            // Clean up dead after what happens above, e.g. combat
+            destroy_dead_entities(&mut self.ecs);
             self.status = GameStatus::Paused;
         } else {
             self.status = process_input(self, ctx);
@@ -63,6 +65,10 @@ impl State {
 
         let mut melee_combat_syster = MeleeCombatSystem {};
         melee_combat_syster.run_now(&self.ecs);
+
+        let mut dmg_system = DamageSystem {};
+        dmg_system.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -124,4 +130,23 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
             player_pos_storage.y = pos.y;
         }
     }
+}
+
+fn destroy_dead_entities(ecs: &mut World) {
+    let mut dead: Vec<Entity> = Vec::new();
+
+    {
+        let combat_stats = ecs.read_storage::<CombatStats>();
+        let entities = ecs.entities();
+        let names = ecs.read_storage::<GameplayName>();
+        for (ent, stats, name) in (&entities, &combat_stats, &names).join() {
+            if stats.hp < 1 {
+                dead.push(ent);
+                println!("{} dies.", name.name);
+            }
+        }
+    }
+
+    ecs.delete_entities(&dead)
+        .expect("Should be able to destroy dead bodies from the world");
 }
