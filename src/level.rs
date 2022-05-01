@@ -1,9 +1,6 @@
-use crate::{
-    components::{PlayerChar, Viewshed},
-    util::rect::Rect,
-};
+use crate::util::rect::Rect;
 use rltk::{to_cp437, Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
-use specs::{Join, World, WorldExt};
+use specs::World;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 

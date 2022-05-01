@@ -7,16 +7,30 @@ use crate::components::Position;
 use crate::components::Renderable;
 use crate::components::Viewshed;
 use crate::level::{draw_tiles, Level, TileType};
+use crate::systems::MonsterAISystem;
 use crate::systems::VisibilitySystem;
+
+/// Current status of the game, used in tick to accomodate the turn-based nature of the gameplay
+#[derive(PartialEq, Copy, Clone)]
+pub enum GameStatus {
+    Paused,
+    Running,
+}
 
 pub struct State {
     pub ecs: World,
+    pub status: GameStatus,
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
-        process_input(self, ctx);
-        self.run_systems();
+        if self.status == GameStatus::Running {
+            // Run the systems a single time and then pause until the next input
+            self.run_systems();
+            self.status = GameStatus::Paused;
+        } else {
+            self.status = process_input(self, ctx);
+        }
 
         ctx.cls();
 
@@ -39,21 +53,26 @@ impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
+
+        let mut monster_ai = MonsterAISystem {};
+        monster_ai.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
 
-fn process_input(gs: &mut State, ctx: &mut Rltk) {
+fn process_input(gs: &mut State, ctx: &mut Rltk) -> GameStatus {
     match ctx.key {
-        None => {}
+        None => return GameStatus::Paused,
         Some(key) => match key {
             VirtualKeyCode::Left | VirtualKeyCode::A => move_player(-1, 0, &mut gs.ecs),
             VirtualKeyCode::Right | VirtualKeyCode::D => move_player(1, 0, &mut gs.ecs),
             VirtualKeyCode::Up | VirtualKeyCode::W => move_player(0, -1, &mut gs.ecs),
             VirtualKeyCode::Down | VirtualKeyCode::S => move_player(0, 1, &mut gs.ecs),
-            _ => {}
+            _ => return GameStatus::Paused,
         },
     }
+    GameStatus::Running
 }
 
 fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {

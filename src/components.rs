@@ -14,3 +14,6 @@ pub struct LeftMover {}
 
 #[derive(Component, Debug)]
 pub struct PlayerChar {}
+
+#[derive(Component, Debug)]
+pub struct MonsterChar {}

@@ -7,8 +7,8 @@ mod level;
 mod systems;
 mod util;
 
-use components::{LeftMover, PlayerChar, Position, Renderable, Viewshed};
-use game_state::State;
+use components::{LeftMover, MonsterChar, PlayerChar, Position, Renderable, Viewshed};
+use game_state::{GameStatus, State};
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
@@ -16,14 +16,13 @@ fn main() -> rltk::BError {
     let ctx = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
-    let mut gs = State { ecs: World::new() };
+    let mut gs = State {
+        ecs: World::new(),
+        status: GameStatus::Running,
+    };
     {
         // Register comps
-        gs.ecs.register::<Position>();
-        gs.ecs.register::<Renderable>();
-        gs.ecs.register::<LeftMover>();
-        gs.ecs.register::<PlayerChar>();
-        gs.ecs.register::<Viewshed>();
+        register_components(&mut gs);
     }
 
     // Create map:
@@ -53,6 +52,7 @@ fn main() -> rltk::BError {
                     range: 8,
                     is_dirty: true,
                 })
+                .with(MonsterChar {})
                 .build();
         }
     }
@@ -73,4 +73,13 @@ fn main() -> rltk::BError {
         .build();
 
     rltk::main_loop(ctx, gs)
+}
+
+fn register_components(gs: &mut State) {
+    gs.ecs.register::<Position>();
+    gs.ecs.register::<Renderable>();
+    gs.ecs.register::<LeftMover>();
+    gs.ecs.register::<PlayerChar>();
+    gs.ecs.register::<Viewshed>();
+    gs.ecs.register::<MonsterChar>();
 }
