@@ -3,13 +3,13 @@ use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
 
-use crate::components::Position;
 use crate::components::Renderable;
 use crate::components::Viewshed;
 use crate::components::{CombatStats, PlayerChar};
+use crate::components::{MeleeAttackIntent, Position};
 use crate::level::{draw_tiles, Level};
-use crate::systems::VisibilitySystem;
 use crate::systems::{MapIndexingSystem, MonsterAISystem};
+use crate::systems::{MeleeCombatSystem, VisibilitySystem};
 
 /// Current status of the game, used in tick to accomodate the turn-based nature of the gameplay
 #[derive(PartialEq, Copy, Clone)]
@@ -61,6 +61,8 @@ impl State {
         let mut map_indexer = MapIndexingSystem {};
         map_indexer.run_now(&self.ecs);
 
+        let mut melee_combat_syster = MeleeCombatSystem {};
+        melee_combat_syster.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -89,18 +91,21 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut players = ecs.write_storage::<PlayerChar>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
     let combat_stats = ecs.read_storage::<CombatStats>();
+    let entities = ecs.entities();
+    let mut melee_attackers = ecs.write_storage::<MeleeAttackIntent>();
     let level = ecs.fetch::<Level>();
 
-    for (_, pos, vs) in (&mut players, &mut positions, &mut viewsheds).join() {
+    for (ent, _, pos, vs) in (&entities, &mut players, &mut positions, &mut viewsheds).join() {
         let target_idx = level.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
         // Before moving - let's see if we attack anything:
         for target in level.tile_content[target_idx].iter() {
             match combat_stats.get(*target) {
                 None => {}
-                Some(_target_combat_stats) => {
+                Some(target_combat_stats) => {
                     // Attack the target
-                    console::log(&format!("YAAAAISSS! We attack!"));
+                    melee_attackers.insert(ent, MeleeAttackIntent { target: *target })
+                        .expect("Should be able to insert melee attack intent to the player entity when moving to attack");
                     // Prevent from further movement
                     return;
                 }

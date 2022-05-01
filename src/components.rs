@@ -1,12 +1,13 @@
+use specs::error::NoError;
 use specs::prelude::*;
-use specs_derive::Component;
+use specs_derive::{Component, ConvertSaveload};
 
-pub mod combat_stats;
+pub mod combat;
 pub mod position;
 pub mod renderable;
 pub mod viewshed;
 
-pub use combat_stats::*;
+pub use combat::*;
 pub use position::*;
 pub use renderable::*;
 pub use viewshed::*;
