@@ -17,6 +17,10 @@ pub struct Level {
     pub rooms: Vec<Rect>,
     pub width: i32,
     pub height: i32,
+    /// Has the same len as the total level indices
+    /// Each tile is either false (not revealed) or true
+    /// TODO try replacing with a set
+    pub are_tiles_revealed: Vec<bool>,
 }
 
 //--------------START RLTK Trait implementations
@@ -72,6 +76,7 @@ impl Level {
             rooms: Vec::new(),
             width: 80,
             height: 50,
+            are_tiles_revealed: vec![false; 80 * 50],
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;
@@ -125,25 +130,19 @@ fn add_corridors(new_room: &Rect, rng: &mut RandomNumberGenerator, level: &mut L
 }
 
 pub fn draw_tiles(ecs: &World, ctx: &mut Rltk) {
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut players = ecs.write_storage::<PlayerChar>();
     let level = ecs.fetch::<Level>();
 
-    for (_, viewshed) in (&mut players, &mut viewsheds).join() {
-        let (mut x, mut y) = (0, 0);
+    let (mut x, mut y) = (0, 0);
+    for (idx, tile) in level.tiles.iter().enumerate() {
+        // Render a type depending on its type
+        if level.are_tiles_revealed[idx] {
+            draw_tile(tile, ctx, x, y);
+        }
 
-        for tile in level.tiles.iter() {
-            // Render a type depending on its type
-            let point = Point::new(x, y);
-            if viewshed.visible_tiles.contains(&point) {
-                draw_tile(tile, ctx, x, y);
-            }
-
-            x += 1;
-            if x > 79 {
-                x = 0;
-                y += 1;
-            }
+        x += 1;
+        if x > 79 {
+            x = 0;
+            y += 1;
         }
     }
 }
