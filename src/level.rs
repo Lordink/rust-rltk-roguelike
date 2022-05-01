@@ -43,6 +43,7 @@ impl BaseMap for Level {
         let y = idx as i32 / self.width;
         let w = self.width as usize;
 
+        // Cardinal directions
         if self.is_valid_exit(x - 1, y) {
             exits.push((idx - 1, 1.0));
         }
@@ -54,6 +55,20 @@ impl BaseMap for Level {
         }
         if self.is_valid_exit(x, y + 1) {
             exits.push((idx + w, 1.0));
+        }
+
+        // Diagonals
+        if self.is_valid_exit(x - 1, y - 1) {
+            exits.push(((idx - w) - 1, 1.45));
+        }
+        if self.is_valid_exit(x + 1, y - 1) {
+            exits.push(((idx - w) + 1, 1.45));
+        }
+        if self.is_valid_exit(x - 1, y + 1) {
+            exits.push(((idx + w) - 1, 1.45));
+        }
+        if self.is_valid_exit(x + 1, y + 1) {
+            exits.push(((idx + w) + 1, 1.45));
         }
 
         exits

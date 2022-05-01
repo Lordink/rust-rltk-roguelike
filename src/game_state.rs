@@ -73,6 +73,11 @@ fn process_input(gs: &mut State, ctx: &mut Rltk) -> GameStatus {
             VirtualKeyCode::Right | VirtualKeyCode::D => move_player(1, 0, &mut gs.ecs),
             VirtualKeyCode::Up | VirtualKeyCode::W => move_player(0, -1, &mut gs.ecs),
             VirtualKeyCode::Down | VirtualKeyCode::S => move_player(0, 1, &mut gs.ecs),
+            VirtualKeyCode::Q => move_player(-1, -1, &mut gs.ecs),
+            VirtualKeyCode::E => move_player(1, -1, &mut gs.ecs),
+            VirtualKeyCode::C => move_player(1, 1, &mut gs.ecs),
+            VirtualKeyCode::Z => move_player(-1, 1, &mut gs.ecs),
+
             _ => return GameStatus::Paused,
         },
     }
