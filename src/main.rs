@@ -30,23 +30,31 @@ fn main() -> rltk::BError {
     let level = level::Level::new();
     let (pl_x, pl_y) = level.rooms[0].get_center();
 
-    // Create monsters:
-    for room in level.rooms.iter().skip(1) {
-        let (x, y) = room.get_center();
-        gs.ecs
-            .create_entity()
-            .with(Position { x, y })
-            .with(Renderable {
-                glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(Viewshed {
-                visible_tiles: Vec::new(),
-                range: 8,
-                is_dirty: true,
-            })
-            .build();
+    // Spawn monsters:
+    {
+        let mut rng = rltk::RandomNumberGenerator::new();
+        for room in level.rooms.iter().skip(1) {
+            let (x, y) = room.get_center();
+            let roll = rng.roll_dice(1, 2);
+            let glyph = rltk::to_cp437(match roll {
+                1 => 'o',
+                _ => 'g',
+            });
+            gs.ecs
+                .create_entity()
+                .with(Position { x, y })
+                .with(Renderable {
+                    glyph,
+                    fg: RGB::named(rltk::RED),
+                    bg: RGB::named(rltk::BLACK),
+                })
+                .with(Viewshed {
+                    visible_tiles: Vec::new(),
+                    range: 8,
+                    is_dirty: true,
+                })
+                .build();
+        }
     }
 
     // Insert map after creating monsters (to satisfy borrow checker)
