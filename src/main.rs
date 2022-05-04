@@ -81,7 +81,8 @@ fn main() -> rltk::BError {
     // Insert map after creating monsters (to satisfy borrow checker)
     gs.ecs.insert(level);
     // Create player:
-    gs.ecs
+    let player_ent = gs
+        .ecs
         .create_entity()
         .with(Position { x: pl_x, y: pl_y })
         .with(Renderable {
@@ -101,6 +102,7 @@ fn main() -> rltk::BError {
             power: 5,
         })
         .build();
+    gs.ecs.insert(player_ent);
 
     rltk::main_loop(ctx, gs)
 }

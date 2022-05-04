@@ -1,5 +1,6 @@
 use crate::{
-    components::{GameplayName, MonsterChar, Position, Viewshed},
+    components::{GameplayName, MeleeAttackIntent, MonsterChar, Position, Viewshed},
+    game_state::GameStatus,
     level::Level,
 };
 use rltk::{console, Point};
@@ -11,22 +12,45 @@ impl<'a> System<'a> for MonsterAISystem {
     type SystemData = (
         WriteExpect<'a, Level>,
         ReadExpect<'a, Point>,
+        ReadExpect<'a, Entity>,
+        // ReadExpect<'a, GameStatus>,
+        Entities<'a>,
         WriteStorage<'a, Viewshed>,
         ReadStorage<'a, MonsterChar>,
         ReadStorage<'a, GameplayName>,
         WriteStorage<'a, Position>,
+        WriteStorage<'a, MeleeAttackIntent>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut level, player_pos, mut viewsheds, monsters, gnames, mut positions) = data;
-        for (mut vs, _, gname, mut pos) in
-            (&mut viewsheds, &monsters, &gnames, &mut positions).join()
+        let (
+            mut level,
+            player_pos,
+            player_ent,
+            // game_status,
+            ents,
+            mut viewsheds,
+            monsters,
+            gnames,
+            mut positions,
+            mut attack_intents,
+        ) = data;
+
+        for (ent, mut vs, _, gname, mut pos) in
+            (&ents, &mut viewsheds, &monsters, &gnames, &mut positions).join()
         {
             let dist =
                 rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
 
             if dist < 1.5 {
-                console::log(&format!("{} bullies you.", gname.name));
+                attack_intents
+                    .insert(
+                        ent,
+                        MeleeAttackIntent {
+                            target: *player_ent,
+                        },
+                    )
+                    .expect("Attack intent with player as a target entity.");
                 continue;
             }
 

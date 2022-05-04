@@ -137,12 +137,19 @@ fn destroy_dead_entities(ecs: &mut World) {
 
     {
         let combat_stats = ecs.read_storage::<CombatStats>();
+        let player_chars = ecs.read_storage::<PlayerChar>();
         let entities = ecs.entities();
         let names = ecs.read_storage::<GameplayName>();
         for (ent, stats, name) in (&entities, &combat_stats, &names).join() {
             if stats.hp < 1 {
-                dead.push(ent);
-                println!("{} dies.", name.name);
+                let is_player = player_chars.get(ent).is_some();
+                if is_player {
+                    // TODO: disable player controls if dead.
+                    println!("You are dead. Not a big surprise!");
+                } else {
+                    dead.push(ent);
+                    println!("{} dies.", name.name);
+                }
             }
         }
     }
