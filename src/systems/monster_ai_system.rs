@@ -13,7 +13,7 @@ impl<'a> System<'a> for MonsterAISystem {
         WriteExpect<'a, Level>,
         ReadExpect<'a, Point>,
         ReadExpect<'a, Entity>,
-        // ReadExpect<'a, GameStatus>,
+        ReadExpect<'a, GameStatus>,
         Entities<'a>,
         WriteStorage<'a, Viewshed>,
         ReadStorage<'a, MonsterChar>,
@@ -27,7 +27,7 @@ impl<'a> System<'a> for MonsterAISystem {
             mut level,
             player_pos,
             player_ent,
-            // game_status,
+            game_status,
             ents,
             mut viewsheds,
             monsters,
@@ -35,6 +35,11 @@ impl<'a> System<'a> for MonsterAISystem {
             mut positions,
             mut attack_intents,
         ) = data;
+
+        // Only run if it is MonsterTurn
+        if *game_status != GameStatus::MonsterTurn {
+            return;
+        }
 
         for (ent, mut vs, _, gname, mut pos) in
             (&ents, &mut viewsheds, &monsters, &gnames, &mut positions).join()

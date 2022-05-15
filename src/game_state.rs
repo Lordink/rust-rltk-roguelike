@@ -14,28 +14,44 @@ use crate::systems::{MeleeCombatSystem, VisibilitySystem};
 /// Current status of the game, used in tick to accomodate the turn-based nature of the gameplay
 #[derive(PartialEq, Copy, Clone)]
 pub enum GameStatus {
-    Paused,
-    Running,
+    AwaitingInput,
+    PreTurn,
+    PlayerTurn,
+    MonsterTurn,
 }
 
 pub struct State {
     pub ecs: World,
-    pub status: GameStatus,
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
-        if self.status == GameStatus::Running {
-            // Run the systems a single time and then pause until the next input
-            self.run_systems();
-            // Clean up dead after what happens above, e.g. combat
-            destroy_dead_entities(&mut self.ecs);
-            self.status = GameStatus::Paused;
-        } else {
-            self.status = process_input(self, ctx);
-        }
-
         ctx.cls();
+
+        // Copy current game status
+        let old_status = *self.ecs.fetch::<GameStatus>();
+        let new_status = match old_status {
+            GameStatus::PreTurn => {
+                self.run_systems();
+                GameStatus::AwaitingInput
+            }
+            GameStatus::AwaitingInput => process_input(self, ctx),
+            GameStatus::PlayerTurn => {
+                self.run_systems();
+                GameStatus::MonsterTurn
+            }
+            GameStatus::MonsterTurn => {
+                self.run_systems();
+                GameStatus::AwaitingInput
+            }
+        };
+        // Write new status:
+        {
+            let mut status_writer = self.ecs.write_resource::<GameStatus>();
+            *status_writer = new_status;
+        }
+        // Get rid of dead entities
+        destroy_dead_entities(&mut self.ecs);
 
         // Render map
         draw_tiles(&mut self.ecs, ctx);
@@ -63,8 +79,8 @@ impl State {
         let mut map_indexer = MapIndexingSystem {};
         map_indexer.run_now(&self.ecs);
 
-        let mut melee_combat_syster = MeleeCombatSystem {};
-        melee_combat_syster.run_now(&self.ecs);
+        let mut melee_combat_system = MeleeCombatSystem {};
+        melee_combat_system.run_now(&self.ecs);
 
         let mut dmg_system = DamageSystem {};
         dmg_system.run_now(&self.ecs);
@@ -75,7 +91,7 @@ impl State {
 
 fn process_input(gs: &mut State, ctx: &mut Rltk) -> GameStatus {
     match ctx.key {
-        None => return GameStatus::Paused,
+        None => return GameStatus::AwaitingInput,
         Some(key) => match key {
             VirtualKeyCode::Left | VirtualKeyCode::A => move_player(-1, 0, &mut gs.ecs),
             VirtualKeyCode::Right | VirtualKeyCode::D => move_player(1, 0, &mut gs.ecs),
@@ -86,10 +102,10 @@ fn process_input(gs: &mut State, ctx: &mut Rltk) -> GameStatus {
             VirtualKeyCode::C => move_player(1, 1, &mut gs.ecs),
             VirtualKeyCode::Z => move_player(-1, 1, &mut gs.ecs),
 
-            _ => return GameStatus::Paused,
+            _ => return GameStatus::PlayerTurn,
         },
     }
-    GameStatus::Running
+    GameStatus::PlayerTurn
 }
 
 fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {

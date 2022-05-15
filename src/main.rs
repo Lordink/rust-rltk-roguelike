@@ -19,10 +19,9 @@ fn main() -> rltk::BError {
     let ctx = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
-    let mut gs = State {
-        ecs: World::new(),
-        status: GameStatus::Running,
-    };
+    let mut gs = State { ecs: World::new() };
+    // Insert globally-available turn status
+    gs.ecs.insert(GameStatus::PreTurn);
     {
         // Register comps
         register_components(&mut gs);
