@@ -1,4 +1,4 @@
-use rltk::{console, Point};
+use rltk::{Point};
 use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
@@ -124,7 +124,7 @@ fn move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
         for target in level.tile_content[target_idx].iter() {
             match combat_stats.get(*target) {
                 None => {}
-                Some(target_combat_stats) => {
+                Some(_target_combat_stats) => {
                     // Attack the target
                     melee_attackers.insert(ent, MeleeAttackIntent { target: *target })
                         .expect("Should be able to insert melee attack intent to the player entity when moving to attack");

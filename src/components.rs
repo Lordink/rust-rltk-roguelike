@@ -1,6 +1,5 @@
-use specs::error::NoError;
 use specs::prelude::*;
-use specs_derive::{Component, ConvertSaveload};
+use specs_derive::{Component};
 
 pub mod combat;
 pub mod position;

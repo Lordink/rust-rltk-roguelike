@@ -3,7 +3,7 @@ use crate::{
     game_state::GameStatus,
     level::Level,
 };
-use rltk::{console, Point};
+use rltk::{Point};
 use specs::prelude::*;
 
 pub struct MonsterAISystem {}
@@ -41,7 +41,7 @@ impl<'a> System<'a> for MonsterAISystem {
             return;
         }
 
-        for (ent, mut vs, _, gname, mut pos) in
+        for (ent, mut vs, _, _gname, mut pos) in
             (&ents, &mut viewsheds, &monsters, &gnames, &mut positions).join()
         {
             let dist =
