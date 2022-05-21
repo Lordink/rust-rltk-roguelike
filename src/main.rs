@@ -7,12 +7,15 @@ mod level;
 mod systems;
 mod util;
 mod gui;
+mod game_log;
 
 use components::{
     CombatStats, GameplayName, IncomingDamage, LeftMover, MeleeAttackIntent, MonsterChar,
     PlayerChar, Position, Renderable, TileBlocker, Viewshed,
 };
 use game_state::{GameStatus, State};
+
+use crate::game_log::GameLog;
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
@@ -27,6 +30,9 @@ fn main() -> rltk::BError {
         // Register comps
         register_components(&mut gs);
     }
+    
+    // Insert game log
+    gs.ecs.insert(GameLog { entries: vec!["Welcome and good luck!".to_string()] });
 
     // Create map:
     let level = level::Level::new();

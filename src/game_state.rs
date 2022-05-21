@@ -7,6 +7,7 @@ use crate::components::Viewshed;
 use crate::components::{CombatStats, PlayerChar};
 use crate::components::{GameplayName, Renderable};
 use crate::components::{MeleeAttackIntent, Position};
+use crate::game_log::GameLog;
 use crate::gui;
 use crate::level::{draw_tiles, Level};
 use crate::systems::{DamageSystem, MapIndexingSystem, MonsterAISystem};
@@ -159,15 +160,16 @@ fn destroy_dead_entities(ecs: &mut World) {
         let player_chars = ecs.read_storage::<PlayerChar>();
         let entities = ecs.entities();
         let names = ecs.read_storage::<GameplayName>();
+        let mut logger = ecs.write_resource::<GameLog>();
         for (ent, stats, name) in (&entities, &combat_stats, &names).join() {
             if stats.hp < 1 {
                 let is_player = player_chars.get(ent).is_some();
                 if is_player {
                     // TODO: disable player controls if dead.
-                    println!("You are dead. Not a big surprise!");
+                    logger.log("You are dead. Not a big surprise!".to_string());
                 } else {
                     dead.push(ent);
-                    println!("{} dies.", name.name);
+                    logger.log(format!("{} dies.", name.name));
                 }
             }
         }

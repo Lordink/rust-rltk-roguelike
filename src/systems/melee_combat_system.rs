@@ -1,4 +1,4 @@
-use crate::components::{CombatStats, GameplayName, IncomingDamage, MeleeAttackIntent};
+use crate::{components::{CombatStats, GameplayName, IncomingDamage, MeleeAttackIntent}, game_log::GameLog};
 use specs::prelude::*;
 
 pub struct MeleeCombatSystem {}
@@ -6,6 +6,7 @@ pub struct MeleeCombatSystem {}
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
+        WriteExpect<'a, GameLog>,
         WriteStorage<'a, MeleeAttackIntent>,
         ReadStorage<'a, GameplayName>,
         ReadStorage<'a, CombatStats>,
@@ -13,7 +14,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (ents, mut melee_attkrs, gnames, cstats, mut inc_dmg) = data;
+        let (ents, mut logger, mut melee_attkrs, gnames, cstats, mut inc_dmg) = data;
 
         // Go thru each from the standpoint of the ATTACKER
         for (_, melee_attack, attacker_name, attacker_stats) in
@@ -41,16 +42,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
             let dmg = i32::max(0, attacker_stats.power as i32 - victim_stats.defense);
 
             if dmg == 0 {
-                println!(
-                    "{} is unable to hurt {}",
-                    &attacker_name.name, &victim_name.name
-                );
+                logger.log(format!("{} is unable to hurt {}", &attacker_name.name, &victim_name.name));
             } else {
                 IncomingDamage::new(&mut inc_dmg, victim_ent, dmg);
-                println!(
+                logger.log(format!(
                     "{} hits {} for {} dmg",
                     &attacker_name.name, &victim_name.name, dmg
-                );
+                ));
             }
         }
 
