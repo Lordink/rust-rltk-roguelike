@@ -20,9 +20,10 @@ use crate::game_log::GameLog;
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
 
-    let ctx = RltkBuilder::simple80x50()
+    let mut ctx = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
+    ctx.with_post_scanlines(true);
     let mut gs = State { ecs: World::new() };
     // Insert globally-available turn status
     gs.ecs.insert(GameStatus::PreTurn);

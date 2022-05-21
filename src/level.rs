@@ -249,15 +249,15 @@ fn draw_tile(is_visible: bool, tile: &TileType, ctx: &mut Rltk, x: i32, y: i32) 
     match tile {
         TileType::Floor => {
             glyph = to_cp437('.');
-            fg = RGB::from_f32(0.5, 0.5, 0.5);
+            fg = RGB::from_f32(0.6, 0.6, 0.6);
         }
         TileType::Wall => {
             glyph = to_cp437('#');
-            fg = RGB::from_f32(0.4, 0.4, 0.4);
+            fg = RGB::from_f32(0.8, 0.8, 0.8);
         }
     }
     if !is_visible {
-        const VIS_DARKEN: f32 = 0.3;
+        const VIS_DARKEN: f32 = 0.4;
         fg.r -= VIS_DARKEN;
         fg.g -= VIS_DARKEN;
         fg.b -= VIS_DARKEN;
