@@ -7,6 +7,7 @@ use crate::components::Viewshed;
 use crate::components::{CombatStats, PlayerChar};
 use crate::components::{GameplayName, Renderable};
 use crate::components::{MeleeAttackIntent, Position};
+use crate::gui;
 use crate::level::{draw_tiles, Level};
 use crate::systems::{DamageSystem, MapIndexingSystem, MonsterAISystem};
 use crate::systems::{MeleeCombatSystem, VisibilitySystem};
@@ -66,6 +67,8 @@ impl GameState for State {
                 ctx.set(pos.x, pos.y, ren.fg, ren.bg, ren.glyph);
             }
         }
+
+        gui::draw_ui(&self.ecs, ctx);
     }
 }
 impl State {

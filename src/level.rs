@@ -4,6 +4,11 @@ use specs::{Entity, World};
 use std::cmp::{max, min};
 use std::collections::HashSet;
 
+// Constants
+const MAP_WIDTH_PIX: usize = 80;
+const MAP_HEIGHT_PIX: usize = 43;
+const MAP_PIXELCOUNT: usize = MAP_WIDTH_PIX * MAP_HEIGHT_PIX;
+
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
     Wall,
@@ -144,7 +149,7 @@ impl Level {
     fn apply_horiz_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
         for x in min(x1, x2)..=max(x1, x2) {
             let idx = self.xy_idx(x, y);
-            if idx > 0 && idx < 80 * 50 {
+            if idx > 0 && idx < MAP_PIXELCOUNT {
                 self.tiles[idx as usize] = TileType::Floor;
             }
         }
@@ -153,21 +158,21 @@ impl Level {
     fn apply_vert_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
         for y in min(y1, y2)..=max(y1, y2) {
             let idx = self.xy_idx(x, y);
-            if idx > 0 && idx < 80 * 50 {
+            if idx > 0 && idx < MAP_PIXELCOUNT {
                 self.tiles[idx as usize] = TileType::Floor;
             }
         }
     }
     pub fn new() -> Self {
         let mut level = Level {
-            tiles: vec![TileType::Wall; 80 * 50],
+            tiles: vec![TileType::Wall; MAP_PIXELCOUNT],
             rooms: Vec::new(),
-            width: 80,
-            height: 50,
+            width: MAP_WIDTH_PIX as i32,
+            height: MAP_HEIGHT_PIX as i32,
             revealed_tile_indices: HashSet::new(),
             fov_tile_indices: HashSet::new(),
             blocked_tile_indices: HashSet::new(),
-            tile_content: vec![Vec::new(); 80 * 50],
+            tile_content: vec![Vec::new(); MAP_PIXELCOUNT],
         };
         const NUM_MAX_ROOMS: u8 = 30;
         const MIN_ROOM_SIZE: u8 = 6;
@@ -178,8 +183,8 @@ impl Level {
         for _ in 0..NUM_MAX_ROOMS {
             let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
             let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE) as i32;
-            let x = rng.roll_dice(1, 80 - w - 1) - 1;
-            let y = rng.roll_dice(1, 50 - h - 1) - 1;
+            let x = rng.roll_dice(1, MAP_WIDTH_PIX as i32 - w - 1) - 1;
+            let y = rng.roll_dice(1, MAP_HEIGHT_PIX as i32 - h - 1) - 1;
             let new_room = Rect::new(x, y, w, h);
 
             let no_intersections = level

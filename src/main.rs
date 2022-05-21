@@ -6,6 +6,7 @@ mod game_state;
 mod level;
 mod systems;
 mod util;
+mod gui;
 
 use components::{
     CombatStats, GameplayName, IncomingDamage, LeftMover, MeleeAttackIntent, MonsterChar,
