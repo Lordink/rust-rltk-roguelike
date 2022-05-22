@@ -1,4 +1,4 @@
-use rltk::{Point};
+use rltk::Point;
 use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
@@ -28,6 +28,8 @@ pub struct State {
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
+        puffin::profile_scope!("Tick");
+        puffin::GlobalProfiler::lock().new_frame();
         ctx.cls();
 
         // Copy current game status
@@ -74,6 +76,7 @@ impl GameState for State {
 }
 impl State {
     fn run_systems(&mut self) {
+        puffin::profile_function!();
         let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
 

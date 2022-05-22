@@ -9,3 +9,5 @@ edition = "2021"
 rltk = { version = "0.8.1" }
 specs = "0.16.1"
 specs-derive = "0.4.1"
+puffin = "0.13"
+puffin_http = "0.10"

@@ -5,9 +5,9 @@ use std::cmp::{max, min};
 use std::collections::HashSet;
 
 // Constants
-const MAP_WIDTH_PIX: usize = 80;
-const MAP_HEIGHT_PIX: usize = 43;
-const MAP_PIXELCOUNT: usize = MAP_WIDTH_PIX * MAP_HEIGHT_PIX;
+pub const MAP_WIDTH_PIX: usize = 80;
+pub const MAP_HEIGHT_PIX: usize = 43;
+pub const MAP_PIXELCOUNT: usize = MAP_WIDTH_PIX * MAP_HEIGHT_PIX;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {

@@ -21,21 +21,27 @@ use crate::game_log::GameLog;
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
 
+    let server_addr = format!("0.0.0.0:{}", puffin_http::DEFAULT_PORT);
+    eprintln!("Serving demo profile data on {}", server_addr);
+    let puffin_server = puffin_http::Server::new(&server_addr).unwrap();
+
+    puffin::set_scopes_on(true);
+
     let mut ctx = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
     ctx.with_post_scanlines(true);
     let mut gs = State { ecs: World::new() };
+    register_components(&mut gs);
 
     // Insert rng generator for utility
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
 
+    // Insert profiling server
+    gs.ecs.insert(puffin_server);
+
     // Insert globally-available turn status
     gs.ecs.insert(GameStatus::PreTurn);
-    {
-        // Register comps
-        register_components(&mut gs);
-    }
 
     // Insert game log
     gs.ecs.insert(GameLog {
@@ -47,8 +53,7 @@ fn main() -> rltk::BError {
 
     // Spawn monsters:
     for room in level.rooms.iter().skip(1) {
-        let spawn_pos = room.get_center();
-        spawner::spawn_rand_monster(&mut gs.ecs, spawn_pos);
+        spawner::spawn_room_content(&mut gs.ecs, room);
     }
 
     // Obtian player starting loc, write it down as a resource for monsters to use
