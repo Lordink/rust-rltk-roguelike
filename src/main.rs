@@ -2,12 +2,13 @@ use rltk::{Point, RGB};
 use specs::prelude::*;
 
 mod components;
+mod game_log;
 mod game_state;
+mod gui;
 mod level;
+mod spawner;
 mod systems;
 mod util;
-mod gui;
-mod game_log;
 
 use components::{
     CombatStats, GameplayName, IncomingDamage, LeftMover, MeleeAttackIntent, MonsterChar,
@@ -25,90 +26,38 @@ fn main() -> rltk::BError {
         .build()?;
     ctx.with_post_scanlines(true);
     let mut gs = State { ecs: World::new() };
+
+    // Insert rng generator for utility
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
+
     // Insert globally-available turn status
     gs.ecs.insert(GameStatus::PreTurn);
     {
         // Register comps
         register_components(&mut gs);
     }
-    
+
     // Insert game log
-    gs.ecs.insert(GameLog { entries: vec!["Welcome and good luck!".to_string()] });
+    gs.ecs.insert(GameLog {
+        entries: vec!["Welcome and good luck!".to_string()],
+    });
 
     // Create map:
     let level = level::Level::new();
 
     // Spawn monsters:
-    {
-        let mut rng = rltk::RandomNumberGenerator::new();
-        for (i, room) in level.rooms.iter().skip(1).enumerate() {
-            let (x, y) = room.get_center();
-            let roll = rng.roll_dice(1, 2);
-            let glyph = rltk::to_cp437(match roll {
-                1 => 'o',
-                _ => 'g',
-            });
-            let name = match roll {
-                1 => "Orc",
-                _ => "Goblin",
-            }
-            .to_string();
-            gs.ecs
-                .create_entity()
-                .with(Position { x, y })
-                .with(Renderable {
-                    glyph,
-                    fg: RGB::named(rltk::RED),
-                    bg: RGB::named(rltk::BLACK),
-                })
-                .with(Viewshed {
-                    visible_tiles: Vec::new(),
-                    range: 8,
-                    is_dirty: true,
-                })
-                .with(MonsterChar {})
-                // Give a numbered gameplay name
-                .with(GameplayName {
-                    name: format!("{} #{}", &name, i + 1),
-                })
-                .with(TileBlocker {})
-                .with(CombatStats {
-                    max_hp: 16,
-                    hp: 16,
-                    defense: 1,
-                    power: 4,
-                })
-                .build();
-        }
+    for room in level.rooms.iter().skip(1) {
+        let spawn_pos = room.get_center();
+        spawner::spawn_rand_monster(&mut gs.ecs, spawn_pos);
     }
 
     // Obtian player starting loc, write it down as a resource for monsters to use
-    let (pl_x, pl_y) = level.rooms[0].get_center();
-    gs.ecs.insert(Point::new(pl_x, pl_y));
+    let pl_spawn_pos = level.rooms[0].get_center();
+    gs.ecs.insert(Point::new(pl_spawn_pos.0, pl_spawn_pos.1));
     // Insert map after creating monsters (to satisfy borrow checker)
     gs.ecs.insert(level);
     // Create player:
-    let player_ent = gs
-        .ecs
-        .create_entity()
-        .with(Position { x: pl_x, y: pl_y })
-        .with(Renderable {
-            glyph: rltk::to_cp437('@'),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-        })
-        .with(PlayerChar {})
-        .with(Viewshed::new())
-        .with(GameplayName {
-            name: "Player".to_string(),
-        })
-        .with(CombatStats {
-            max_hp: 30,
-            hp: 30,
-            defense: 2,
-            power: 5,
-        })
-        .build();
+    let player_ent = spawner::spawn_player(&mut gs.ecs, pl_spawn_pos);
     gs.ecs.insert(player_ent);
 
     rltk::main_loop(ctx, gs)
