@@ -2,6 +2,8 @@ use rltk::Point;
 use rltk::{GameState, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::components::Viewshed;
 use crate::components::{CombatStats, PlayerChar};
@@ -28,50 +30,61 @@ pub struct State {
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
-        puffin::profile_scope!("Tick");
+        let tick_start_time = Instant::now();
         puffin::GlobalProfiler::lock().new_frame();
-        ctx.cls();
-
-        // Copy current game status
-        let old_status = *self.ecs.fetch::<GameStatus>();
-        let new_status = match old_status {
-            GameStatus::PreTurn => {
-                self.run_systems();
-                GameStatus::AwaitingInput
-            }
-            GameStatus::AwaitingInput => process_input(self, ctx),
-            GameStatus::PlayerTurn => {
-                self.run_systems();
-                GameStatus::MonsterTurn
-            }
-            GameStatus::MonsterTurn => {
-                self.run_systems();
-                GameStatus::AwaitingInput
-            }
-        };
-        // Write new status:
+        puffin::profile_scope!("Tick + Sleep");
+        // Inner frame, to be able to properly measure its duration
         {
-            let mut status_writer = self.ecs.write_resource::<GameStatus>();
-            *status_writer = new_status;
-        }
-        // Get rid of dead entities
-        destroy_dead_entities(&mut self.ecs);
+            puffin::profile_scope!("Tick");
+            ctx.cls();
 
-        // Render map
-        draw_tiles(&mut self.ecs, ctx);
-
-        // Render entities
-        let positions = self.ecs.read_storage::<Position>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-        let level = self.ecs.fetch::<Level>();
-
-        for (pos, ren) in (&positions, &renderables).join() {
-            if level.is_tile_visible(level.xy_idx(pos.x, pos.y)) {
-                ctx.set(pos.x, pos.y, ren.fg, ren.bg, ren.glyph);
+            // Copy current game status
+            let old_status = *self.ecs.fetch::<GameStatus>();
+            let new_status = match old_status {
+                GameStatus::PreTurn => {
+                    self.run_systems();
+                    GameStatus::AwaitingInput
+                }
+                GameStatus::AwaitingInput => process_input(self, ctx),
+                GameStatus::PlayerTurn => {
+                    self.run_systems();
+                    GameStatus::MonsterTurn
+                }
+                GameStatus::MonsterTurn => {
+                    self.run_systems();
+                    GameStatus::AwaitingInput
+                }
+            };
+            // Write new status:
+            {
+                let mut status_writer = self.ecs.write_resource::<GameStatus>();
+                *status_writer = new_status;
             }
+            // Get rid of dead entities
+            destroy_dead_entities(&mut self.ecs);
+
+            // Render map
+            draw_tiles(&mut self.ecs, ctx);
+
+            // Render entities
+            let positions = self.ecs.read_storage::<Position>();
+            let renderables = self.ecs.read_storage::<Renderable>();
+            let level = self.ecs.fetch::<Level>();
+
+            for (pos, ren) in (&positions, &renderables).join() {
+                if level.is_tile_visible(level.xy_idx(pos.x, pos.y)) {
+                    ctx.set(pos.x, pos.y, ren.fg, ren.bg, ren.glyph);
+                }
+            }
+
+            gui::draw_ui(&self.ecs, ctx);
         }
 
-        gui::draw_ui(&self.ecs, ctx);
+        let tick_time = tick_start_time.elapsed();
+        let time_to_sleep = 16.7 - tick_time.as_millis() as f32;
+        if time_to_sleep > 0.0 {
+            thread::sleep(Duration::from_millis(time_to_sleep as u64));
+        }
     }
 }
 impl State {
