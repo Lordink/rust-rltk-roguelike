@@ -11,8 +11,8 @@ mod systems;
 mod util;
 
 use components::{
-    CombatStats, GameplayName, IncomingDamage, LeftMover, MeleeAttackIntent, MonsterChar,
-    PlayerChar, Position, Renderable, TileBlocker, Viewshed,
+    CombatStats, GameplayName, Healer, IncomingDamage, Item, LeftMover, MeleeAttackIntent,
+    MonsterChar, PlayerChar, Position, Renderable, TileBlocker, Viewshed,
 };
 use game_state::{GameStatus, State};
 
@@ -80,4 +80,6 @@ fn register_components(gs: &mut State) {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<MeleeAttackIntent>();
     gs.ecs.register::<IncomingDamage>();
+    gs.ecs.register::<Item>();
+    gs.ecs.register::<Healer>();
 }

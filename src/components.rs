@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use specs_derive::{Component};
+use specs_derive::Component;
 
 pub mod combat;
 pub mod position;
@@ -28,3 +28,11 @@ pub struct GameplayName {
 
 #[derive(Component, Debug)]
 pub struct TileBlocker {}
+
+#[derive(Component, Debug)]
+pub struct Item {}
+
+#[derive(Component, Debug)]
+pub struct Healer {
+    pub heal_amount: u32,
+}
